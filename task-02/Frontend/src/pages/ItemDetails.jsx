@@ -48,18 +48,47 @@ function ItemDetails() {
       <div className="flex-1 w-full max-w-6xl mx-auto p-6">
         <div className="flex gap-6">
           <div className="flex-1 flex flex-col gap-4">
-            <div className="h-64 bg-blue-300 relative flex items-center justify-center rounded">
+            {/* Main product image */}
+            <div className="h-72 relative overflow-hidden rounded bg-gray-200">
+              {product.image_url ? (
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : (
+                <div className="w-full h-full bg-blue-300 flex items-center justify-center">
+                  <span className="text-blue-700 font-bold text-xl">{product.name}</span>
+                </div>
+              )}
               {!inStock && (
-                <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-                  <span className="text-red-600 font-bold text-3xl">NO STOCK</span>
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="text-white font-bold text-3xl bg-red-600 px-4 py-2 rounded">NO STOCK</span>
                 </div>
               )}
             </div>
-            
+
+            {/* Thumbnail strip — same image, slight zoom variation */}
             <div className="flex gap-2">
-              <div className="h-12 w-12 bg-gray-400 rounded"></div>
-              <div className="h-12 w-12 bg-gray-400 rounded"></div>
-              <div className="h-12 w-12 bg-gray-400 rounded"></div>
+              {[
+                `${product.image_url}&crop=top`,
+                `${product.image_url}&crop=center`,
+                `${product.image_url}&crop=bottom`,
+              ].map((url, i) => (
+                <div key={i} className="h-14 w-14 rounded overflow-hidden border-2 border-blue-400 cursor-pointer hover:border-blue-600">
+                  {product.image_url ? (
+                    <img
+                      src={url || product.image_url}
+                      alt={`${product.name} view ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.parentElement.classList.add('bg-gray-300'); e.target.style.display='none'; }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-400" />
+                  )}
+                </div>
+              ))}
             </div>
             
             <h2 className="font-bold text-2xl text-gray-800">{product.name}</h2>

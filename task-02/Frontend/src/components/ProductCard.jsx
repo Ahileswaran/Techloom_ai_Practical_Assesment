@@ -5,14 +5,30 @@ function ProductCard({ product, onAddToCart, onClick }) {
 
   return (
     <div className="flex flex-col bg-white rounded overflow-hidden shadow cursor-pointer border border-gray-200 hover:shadow-lg transition-shadow">
-      <div 
-        className="h-40 bg-blue-300 relative flex items-center justify-center"
+      <div
+        className="h-40 relative overflow-hidden bg-gray-200"
         onClick={() => onClick(product.product_id)}
       >
-        <span className="text-blue-800 font-bold opacity-50">Image Placeholder</span>
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div
+          className="w-full h-full bg-blue-300 items-center justify-center text-blue-800 font-bold opacity-50"
+          style={{ display: product.image_url ? 'none' : 'flex' }}
+        >
+          {product.name}
+        </div>
         {isOutOfStock && (
-          <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-            <span className="text-red-600 font-bold text-xl">Out of Stock</span>
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <span className="text-white font-bold text-lg bg-red-600 px-3 py-1 rounded">Out of Stock</span>
           </div>
         )}
       </div>
