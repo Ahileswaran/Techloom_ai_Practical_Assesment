@@ -2,53 +2,44 @@ import axios from 'axios';
 const API = import.meta.env.VITE_API_URL || 'https://fastspace-backend-production.up.railway.app';
 
 export const cartService = {
-  async getCart() {
+  getCart() {
     try {
-      const res = await axios.get(`${API}/api/cart`);
-      const items = res.data.data;
-      localStorage.setItem('fastspace_cart', JSON.stringify(items));
-      return items;
+      const stored = localStorage.getItem('fastspace_cart');
+      const parsed = stored ? JSON.parse(stored) : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
-      return JSON.parse(localStorage.getItem('fastspace_cart') || '[]');
+      return [];
     }
   },
-  async addToCart(product, quantity = 1) {
-    try {
-      await axios.post(`${API}/api/cart`, { product_id: product.product_id, quantity });
-    } catch(e) {
-      console.error('Add to cart API error:', e);
-    }
-    // Also update localStorage
-    const cart = JSON.parse(localStorage.getItem('fastspace_cart') || '[]');
+  addToCart(product, quantity = 1) {
+    const cart = this.getCart();
     const existing = cart.find(i => i.product_id === product.product_id);
-    if (existing) existing.quantity += quantity;
-    else cart.push({ ...product, quantity });
+    if (existing) {
+      existing.quantity = (existing.quantity || 1) + quantity;
+    } else {
+      cart.push({
+        product_id: product.product_id,
+        name: product.name,
+        price: parseFloat(product.price) || 0,
+        quantity,
+        image_url: product.image_url
+      });
+    }
+    localStorage.setItem('fastspace_cart', JSON.stringify(cart));
+    axios.post(`${API}/api/cart`, { product_id: product.product_id, quantity }).catch(() => {});
+    return cart;
+  },
+  removeFromCart(productId) {
+    const cart = this.getCart().filter(i => i.product_id !== productId);
     localStorage.setItem('fastspace_cart', JSON.stringify(cart));
     return cart;
   },
-  async removeFromCart(productId) {
-    try {
-      // Need to find the cart_item_id. Get cart first.
-      const res = await axios.get(`${API}/api/cart`);
-      const item = res.data.data.find(i => i.product_id === productId);
-      if (item) await axios.delete(`${API}/api/cart/${item.cart_item_id}`);
-    } catch(e) {
-      console.error('Remove from cart API error:', e);
-    }
-    const cart = JSON.parse(localStorage.getItem('fastspace_cart') || '[]').filter(i => i.product_id !== productId);
-    localStorage.setItem('fastspace_cart', JSON.stringify(cart));
-    return cart;
-  },
-  async clearCart() {
-    try {
-      await axios.delete(`${API}/api/cart`);
-    } catch(e) {
-      console.error('Clear cart API error:', e);
-    }
+  clearCart() {
     localStorage.removeItem('fastspace_cart');
+    axios.delete(`${API}/api/cart`).catch(() => {});
   },
   getCartCount() {
-    const cart = JSON.parse(localStorage.getItem('fastspace_cart') || '[]');
-    return cart.reduce((sum, item) => sum + item.quantity, 0);
+    const cart = this.getCart();
+    return cart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
   }
 };

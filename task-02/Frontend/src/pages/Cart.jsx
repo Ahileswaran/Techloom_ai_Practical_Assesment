@@ -11,7 +11,7 @@ import { paymentService } from '../services/paymentService';
 import { v4 as uuidv4 } from 'uuid';
 
 function Cart() {
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => cartService.getCart());
   const [userDetails, setUserDetails] = useState({ name: '', address: '' });
   const [userDetailsSubmitted, setUserDetailsSubmitted] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -20,18 +20,19 @@ function Cart() {
 
   useEffect(() => {
     setCartItems(cartService.getCart());
-    reservationService.reserveStock('temp-order', cartService.getCart());
+    reservationService.reserveStock('temp-order', cartService.getCart()).catch(() => {});
   }, []);
 
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const safeCart = Array.isArray(cartItems) ? cartItems : [];
+  const total = safeCart.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * (Number(item.quantity) || 1), 0);
 
   const handleRemove = (id) => {
-    cartService.removeFromCart(id);
-    setCartItems(cartService.getCart());
+    const updated = cartService.removeFromCart(id);
+    setCartItems(updated);
   };
 
   const handlePayment = async (paymentData) => {
-    if (cartItems.length === 0) return alert('Cart is empty');
+    if (safeCart.length === 0) return alert('Cart is empty');
     if (!userDetails.name.trim() || !userDetails.address.trim()) {
       alert('Please enter your Name and Address in the User Details section before proceeding to pay!');
       return;
@@ -39,32 +40,45 @@ function Cart() {
     setProcessing(true);
     const orderId = Date.now();
     const activeMethod = paymentData?.method || paymentMethod || 'card';
-    const res = await paymentService.processPayment(orderId, activeMethod, total, uuidv4());
-    setProcessing(false);
-    
-    if (res.status === 'success') {
-      cartService.clearCart();
-      navigate('/payment-success', { 
-        state: { 
-          items: cartItems, 
-          total, 
+    try {
+      const res = await paymentService.processPayment(orderId, activeMethod, total, uuidv4());
+      setProcessing(false);
+      
+      if (res?.status === 'success') {
+        cartService.clearCart();
+        navigate('/payment-success', { 
+          state: { 
+            items: safeCart, 
+            total, 
+            paymentMethod: activeMethod,
+            paymentDetails: paymentData,
+            userDetails 
+          } 
+        });
+      } else if (res?.status === 'failed') {
+        navigate('/payment-failed', { 
+          state: { 
+            items: safeCart, 
+            total, 
+            paymentMethod: activeMethod,
+            paymentDetails: paymentData,
+            userDetails 
+          } 
+        });
+      } else {
+        navigate('/payment-timeout');
+      }
+    } catch (e) {
+      setProcessing(false);
+      navigate('/payment-failed', {
+        state: {
+          items: safeCart,
+          total,
           paymentMethod: activeMethod,
           paymentDetails: paymentData,
-          userDetails 
-        } 
+          userDetails
+        }
       });
-    } else if (res.status === 'failed') {
-      navigate('/payment-failed', { 
-        state: { 
-          items: cartItems, 
-          total, 
-          paymentMethod: activeMethod,
-          paymentDetails: paymentData,
-          userDetails 
-        } 
-      });
-    } else {
-      navigate('/payment-timeout');
     }
   };
 
@@ -75,7 +89,7 @@ function Cart() {
 
   return (
     <div className="min-h-screen bg-sky-100 flex flex-col">
-      <Navbar cartCount={cartItems.reduce((sum, i) => sum + i.quantity, 0)} />
+      <Navbar cartCount={safeCart.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)} />
       
       <div className="flex-1 w-full max-w-6xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
@@ -92,11 +106,11 @@ function Cart() {
         
         <div className="bg-slate-800 p-6 rounded flex gap-4">
           <div className="flex-1 bg-blue-300 rounded p-4 flex flex-col">
-            {cartItems.length === 0 ? (
-              <p>Your cart is empty.</p>
+            {safeCart.length === 0 ? (
+              <p className="text-gray-700 font-medium">Your cart is empty.</p>
             ) : (
               <div className="flex-1 flex flex-col gap-2 overflow-y-auto max-h-[460px]">
-                {cartItems.map(item => (
+                {safeCart.map(item => (
                   <CartItem key={item.product_id} item={item} onRemove={handleRemove} />
                 ))}
               </div>

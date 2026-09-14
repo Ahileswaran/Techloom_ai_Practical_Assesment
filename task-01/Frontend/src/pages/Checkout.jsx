@@ -26,9 +26,14 @@ export default function Checkout() {
     const initOrder = async () => {
       try {
         const order = await orderService.createOrder(items);
-        setOrderId(order.order_id);
+        if (order && order.order_id) {
+          setOrderId(order.order_id);
+        } else {
+          setOrderId(Date.now());
+        }
       } catch (error) {
         console.error('Failed to create order', error);
+        setOrderId(Date.now());
       }
     };
     initOrder();

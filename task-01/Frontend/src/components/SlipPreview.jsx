@@ -1,5 +1,6 @@
-export default function SlipPreview({ items, storeName = 'AROMEX' }) {
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+export default function SlipPreview({ items = [], storeName = 'AROMEX' }) {
+  const safeItems = Array.isArray(items) ? items : [];
+  const subtotal = safeItems.reduce((acc, item) => acc + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
   const tax = subtotal * 0.05;
   const total = subtotal + tax;
 
@@ -13,10 +14,10 @@ export default function SlipPreview({ items, storeName = 'AROMEX' }) {
       
       <hr className="border-t-2 border-dashed border-gray-400 mb-4" />
       
-      {items.map((item, idx) => (
+      {safeItems.map((item, idx) => (
         <div key={idx} className="flex justify-between mb-1">
           <span>{item.quantity}x {item.name}</span>
-          <span>{(item.price * item.quantity).toFixed(2)}</span>
+          <span>{((Number(item.price) || 0) * (Number(item.quantity) || 1)).toFixed(2)}</span>
         </div>
       ))}
       

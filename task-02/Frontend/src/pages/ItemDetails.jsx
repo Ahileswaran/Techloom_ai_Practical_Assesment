@@ -92,7 +92,7 @@ function ItemDetails() {
             </div>
             
             <h2 className="font-bold text-2xl text-gray-800">{product.name}</h2>
-            <p className="font-bold text-xl text-blue-800">Rs. {product.price.toLocaleString()}</p>
+            <p className="font-bold text-xl text-blue-800">Rs. {Number(product.price || 0).toLocaleString()}</p>
             
             <div className="flex items-center gap-4 my-2">
               <span className="font-semibold">Quantity:</span>

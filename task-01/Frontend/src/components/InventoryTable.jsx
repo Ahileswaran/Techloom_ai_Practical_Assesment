@@ -1,4 +1,6 @@
-export default function InventoryTable({ products }) {
+export default function InventoryTable({ products = [] }) {
+  const safeProducts = Array.isArray(products) ? products : [];
+
   return (
     <div className="overflow-x-auto rounded">
       <table className="w-full text-left bg-blue-200">
@@ -10,15 +12,27 @@ export default function InventoryTable({ products }) {
           </tr>
         </thead>
         <tbody>
-          {products.map((p, index) => (
-            <tr key={p.product_id} className={index % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
-              <td className="p-2 border">{p.name}</td>
-              <td className={`p-2 border font-bold ${p.stock_quantity <= 5 ? 'text-red-600' : 'text-gray-800'}`}>
-                {p.stock_quantity}
+          {safeProducts.length === 0 ? (
+            <tr>
+              <td colSpan="3" className="p-4 text-center text-gray-600 bg-white">
+                Loading inventory...
               </td>
-              <td className="p-2 border">{p.price.toFixed(2)}</td>
             </tr>
-          ))}
+          ) : (
+            safeProducts.map((p, index) => {
+              const qty = Number(p.stock_quantity) || 0;
+              const price = Number(p.price) || 0;
+              return (
+                <tr key={p.product_id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
+                  <td className="p-2 border">{p.name}</td>
+                  <td className={`p-2 border font-bold ${qty <= 5 ? 'text-red-600' : 'text-gray-800'}`}>
+                    {qty}
+                  </td>
+                  <td className="p-2 border">{price.toFixed(2)}</td>
+                </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
     </div>
