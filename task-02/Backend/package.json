@@ -1,0 +1,17 @@
+{
+  "name": "ecommerce-backend",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "node-cron": "^3.0.3",
+    "uuid": "^9.0.0"
+  }
+}
