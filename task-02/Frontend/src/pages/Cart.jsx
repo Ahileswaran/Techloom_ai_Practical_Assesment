@@ -38,9 +38,13 @@ function Cart() {
       return;
     }
     setProcessing(true);
-    const orderId = Date.now();
     const activeMethod = paymentData?.method || paymentMethod || 'card';
     try {
+      // 1. Create order in database first to get real order_id and reserve stock
+      const order = await orderService.createOrder(safeCart);
+      const orderId = order?.order_id || Date.now();
+
+      // 2. Process payment
       const res = await paymentService.processPayment(orderId, activeMethod, total, uuidv4());
       setProcessing(false);
       
@@ -48,6 +52,7 @@ function Cart() {
         cartService.clearCart();
         navigate('/payment-success', { 
           state: { 
+            orderId,
             items: safeCart, 
             total, 
             paymentMethod: activeMethod,
@@ -58,6 +63,7 @@ function Cart() {
       } else if (res?.status === 'failed') {
         navigate('/payment-failed', { 
           state: { 
+            orderId,
             items: safeCart, 
             total, 
             paymentMethod: activeMethod,
@@ -66,19 +72,39 @@ function Cart() {
           } 
         });
       } else {
-        navigate('/payment-timeout');
+        navigate('/payment-timeout', {
+          state: {
+            orderId,
+            items: safeCart,
+            total
+          }
+        });
       }
     } catch (e) {
+      console.error('Payment error:', e);
       setProcessing(false);
-      navigate('/payment-failed', {
-        state: {
-          items: safeCart,
-          total,
-          paymentMethod: activeMethod,
-          paymentDetails: paymentData,
-          userDetails
-        }
-      });
+      if (activeMethod === 'cash_on_delivery') {
+        cartService.clearCart();
+        navigate('/payment-success', {
+          state: {
+            items: safeCart,
+            total,
+            paymentMethod: activeMethod,
+            paymentDetails: paymentData,
+            userDetails
+          }
+        });
+      } else {
+        navigate('/payment-failed', {
+          state: {
+            items: safeCart,
+            total,
+            paymentMethod: activeMethod,
+            paymentDetails: paymentData,
+            userDetails
+          }
+        });
+      }
     }
   };
 

@@ -18,7 +18,7 @@ function PaymentFailed() {
               <li key={item.product_id}>{item.name} x{item.quantity}</li>
             ))}
           </ul>
-          <p className="font-bold border-t pt-2">Total {(total).toFixed(2)} LKR</p>
+          <p className="font-bold border-t pt-2">Total {Number(total || 0).toFixed(2)} LKR</p>
         </div>
         
         <div className="bg-blue-700 p-3 rounded mb-6 text-center">
@@ -33,7 +33,7 @@ function PaymentFailed() {
             Update Payment method
           </button>
           <button 
-            onClick={() => navigate('/cancel')}
+            onClick={() => navigate('/cancel', { state: { items, total, ...location.state } })}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold"
           >
             Cancel Order

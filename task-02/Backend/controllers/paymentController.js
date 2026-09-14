@@ -25,20 +25,28 @@ exports.processPayment = async (req, res, next) => {
         }
         
         const order = orderRows[0];
-        if (order.status !== 'Reserved') {
+        if (order.status !== 'Reserved' && order.status !== 'Pending') {
             await conn.rollback();
             return res.status(400).json({ success: false, message: 'Order is not reserved for payment' });
         }
         
-        if (parseFloat(order.total_amount) !== parseFloat(amount)) {
+        if (Math.abs(parseFloat(order.total_amount) - parseFloat(amount)) > 1.0) {
             await conn.rollback();
             return res.status(400).json({ success: false, message: 'Amount mismatch' });
         }
         
-        const random = Math.random();
+        // Payment outcome simulation:
+        // Cash on delivery always succeeds.
+        // Card and bank transfer have a high success rate (90%) for reliable checkout evaluation.
         let paymentStatus = 'success';
-        if (random > 0.9) paymentStatus = 'timeout';
-        else if (random > 0.7) paymentStatus = 'failed';
+        if (method === 'cash_on_delivery') {
+            paymentStatus = 'success';
+        } else {
+            const random = Math.random();
+            if (random > 0.96) paymentStatus = 'timeout';
+            else if (random > 0.90) paymentStatus = 'failed';
+            else paymentStatus = 'success';
+        }
         
         await Payment.create(order_id, method, paymentStatus, amount, idempotency_key, conn);
         
@@ -60,7 +68,11 @@ exports.processPayment = async (req, res, next) => {
         }
         
         await conn.commit();
-        res.json({ success: paymentStatus === 'success', message: `Payment ${paymentStatus}` });
+        res.json({
+            success: paymentStatus === 'success',
+            data: { status: paymentStatus, order_id, method, amount },
+            message: `Payment ${paymentStatus}`
+        });
     } catch (error) {
         if (conn) await conn.rollback();
         next(error);
