@@ -9,48 +9,40 @@ import { cartService } from '../services/cartService';
 
 function Home() {
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [filters, setFilters] = useState({ minPrice: '', maxPrice: '', inStockOnly: false });
   const [currentPage, setCurrentPage] = useState(1);
   const [cartCount, setCartCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   
   const navigate = useNavigate();
   const itemsPerPage = 8;
 
   useEffect(() => {
-    productService.getProducts({}).then(res => {
-      setProducts(res.products); // the mock returns a slice, but let's actually just get all from mockProducts and filter locally since the prompt says "Filter effect: when searchTerm, selectedCategory, or filters change: Filter mockProducts"
-      // Wait, mock returns sliced. Let's fetch all initially.
-      import('../data/mockData').then(module => {
-        setProducts(module.mockProducts);
-        setFilteredProducts(module.mockProducts);
-      });
-    });
     setCartCount(cartService.getCartCount());
   }, []);
 
   useEffect(() => {
-    let result = [...products];
-    if (searchTerm) {
-      result = result.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
-    if (selectedCategory) {
-      result = result.filter(p => p.category === selectedCategory);
-    }
-    if (filters.minPrice) {
-      result = result.filter(p => p.price >= parseFloat(filters.minPrice));
-    }
-    if (filters.maxPrice) {
-      result = result.filter(p => p.price <= parseFloat(filters.maxPrice));
-    }
-    if (filters.inStockOnly) {
-      result = result.filter(p => p.stock_quantity > 0);
-    }
-    setFilteredProducts(result);
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory, filters, products]);
+    const fetchProducts = async () => {
+      try {
+        const result = await productService.getProducts({
+          search: searchTerm,
+          category: selectedCategory,
+          minPrice: filters.minPrice,
+          maxPrice: filters.maxPrice,
+          available: filters.inStockOnly ? true : undefined,
+          page: currentPage,
+          limit: itemsPerPage
+        });
+        setProducts(result.products || []);
+        setTotalPages(result.pages || 1);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    };
+    fetchProducts();
+  }, [searchTerm, selectedCategory, filters, currentPage]);
 
   const handleAddToCart = (product) => {
     cartService.addToCart(product, 1);
@@ -60,9 +52,6 @@ function Home() {
   const handleViewProduct = (id) => {
     navigate('/item/' + id);
   };
-
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const pageProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="min-h-screen bg-sky-100 flex flex-col">
@@ -82,7 +71,7 @@ function Home() {
         
         <div className="flex-1 flex flex-col">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {pageProducts.map(product => (
+            {products.map(product => (
               <ProductCard 
                 key={product.product_id}
                 product={product}

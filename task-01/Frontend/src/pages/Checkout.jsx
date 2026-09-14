@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { createOrder } from '../services/orderService';
-import { reserveStock } from '../services/reservationService';
-import { processPayment } from '../services/paymentService';
+import { orderService } from '../services/orderService';
+import { paymentService } from '../services/paymentService';
 import CashPayment from '../components/CashPayment';
 import CardPayment from '../components/CardPayment';
 import SlipPreview from '../components/SlipPreview';
@@ -23,11 +22,14 @@ export default function Checkout() {
       return;
     }
     
-    // Initial order creation and stock reservation
+    // Initial order creation
     const initOrder = async () => {
-      const order = await createOrder(items, total);
-      setOrderId(order.order_id);
-      await reserveStock(order.order_id, items);
+      try {
+        const order = await orderService.createOrder(items);
+        setOrderId(order.order_id);
+      } catch (error) {
+        console.error('Failed to create order', error);
+      }
     };
     initOrder();
   }, [items, total, navigate]);
@@ -35,15 +37,24 @@ export default function Checkout() {
   const handlePayment = async (data) => {
     setProcessing(true);
     const idempotencyKey = uuidv4();
-    const result = await processPayment(orderId, data.method, data.paidAmount || total, idempotencyKey);
-    setProcessing(false);
+    const amount = total;
+    const paidAmount = data.paidAmount || total;
+    const balance = data.balance || 0;
     
-    if (result.status === 'success') {
-      navigate('/payment-success', { state: { items, total } });
-    } else if (result.status === 'failed') {
-      navigate('/payment-failed', { state: { items, total } });
-    } else if (result.status === 'timeout') {
-      navigate('/payment-failed', { state: { items, total, reason: 'timeout' } });
+    try {
+      const result = await paymentService.processPayment(orderId, data.method, amount, idempotencyKey, paidAmount, balance);
+      setProcessing(false);
+      
+      if (result.status === 'success') {
+        navigate('/payment-success', { state: { items, total } });
+      } else if (result.status === 'failed') {
+        navigate('/payment-failed', { state: { items, total } });
+      } else if (result.status === 'timeout') {
+        navigate('/payment-failed', { state: { items, total, reason: 'timeout' } });
+      }
+    } catch (error) {
+      setProcessing(false);
+      navigate('/payment-failed', { state: { items, total, reason: 'error' } });
     }
   };
 

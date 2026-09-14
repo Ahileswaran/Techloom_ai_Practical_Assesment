@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProducts } from '../services/productService';
+import { productService } from '../services/productService';
 import InventoryTable from '../components/InventoryTable';
 import ItemDetails from '../components/ItemDetails';
 import SlipPreview from '../components/SlipPreview';
@@ -16,7 +16,7 @@ export default function POSDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getProducts().then(setProducts);
+    productService.getProducts().then(setProducts).catch(console.error);
   }, []);
 
   const handleAdd = (searchStr, qty) => {

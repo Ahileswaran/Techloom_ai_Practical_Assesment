@@ -20,7 +20,7 @@ function ItemDetails() {
     productService.getProductById(id).then(res => {
       setProduct(res);
       if (res) {
-        productService.getSimilarProducts(res.category, id).then(sim => setSimilarProducts(sim));
+        productService.getSimilarProducts(res.category_id || res.category, id).then(sim => setSimilarProducts(sim));
       }
     });
   }, [id]);

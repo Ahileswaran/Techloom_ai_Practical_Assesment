@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { mockCategories } from '../data/mockData';
+import { categoryService } from '../services/categoryService';
 
 function Navbar({ onSearch, onCategorySelect, cartCount }) {
   const [showCategories, setShowCategories] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    categoryService.getCategories().then(setCategories);
+  }, []);
 
   const handleSearch = () => {
     if (onSearch) onSearch(searchTerm);
@@ -33,13 +38,13 @@ function Navbar({ onSearch, onCategorySelect, cartCount }) {
         {showCategories && (
           <div className="absolute top-12 left-0 w-48 bg-white text-black rounded shadow-lg z-50 py-2">
             <div className="px-4 py-2 hover:bg-gray-200 cursor-pointer" onClick={() => handleCategorySelect('')}>All</div>
-            {mockCategories.map(cat => (
+            {categories.map(cat => (
               <div 
-                key={cat} 
+                key={cat.category_id || cat.name || cat} 
                 className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                onClick={() => handleCategorySelect(cat)}
+                onClick={() => handleCategorySelect(cat.name || cat)}
               >
-                {cat}
+                {cat.name || cat}
               </div>
             ))}
           </div>

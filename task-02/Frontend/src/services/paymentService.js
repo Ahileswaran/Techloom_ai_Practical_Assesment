@@ -1,16 +1,14 @@
+import axios from 'axios';
+const API = import.meta.env.VITE_API_URL || 'https://fastspace-backend-production.up.railway.app';
+
 export const paymentService = {
   async processPayment(orderId, method, amount, idempotencyKey) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const rand = Math.random();
-        if (rand < 0.6) {
-          resolve({ status: 'success' });
-        } else if (rand < 0.85) {
-          resolve({ status: 'failed' });
-        } else {
-          resolve({ status: 'timeout' });
-        }
-      }, 1500);
+    const res = await axios.post(`${API}/api/payments/process`, {
+      order_id: orderId,
+      method,
+      amount,
+      idempotency_key: idempotencyKey
     });
+    return res.data.data;
   }
 };

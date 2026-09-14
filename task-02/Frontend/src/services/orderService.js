@@ -1,42 +1,21 @@
-import { mockOrders } from '../data/mockData';
+import axios from 'axios';
+const API = import.meta.env.VITE_API_URL || 'https://fastspace-backend-production.up.railway.app';
 
 export const orderService = {
-  async createOrder(items, userDetails) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          order_id: Date.now(),
-          user: userDetails,
-          items,
-          total: items.reduce((sum, i) => sum + i.price * i.quantity, 0),
-          status: 'Pending',
-          created_at: new Date().toISOString()
-        });
-      }, 300);
-    });
+  async createOrder(items) {
+    const res = await axios.post(`${API}/api/orders`, { items });
+    return res.data.data;
   },
-  
-  async getOrderHistory() {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve(mockOrders);
-      }, 200);
-    });
+  async getOrders() {
+    const res = await axios.get(`${API}/api/orders`);
+    return res.data.data;
   },
-  
-  async getOrderById(id) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve(mockOrders.find(o => o.order_id === parseInt(id)));
-      }, 200);
-    });
+  async getOrder(orderId) {
+    const res = await axios.get(`${API}/api/orders/${orderId}`);
+    return res.data.data;
   },
-  
-  async cancelOrder(id) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({ success: true, message: 'Order cancelled' });
-      }, 300);
-    });
+  async cancelOrder(orderId) {
+    const res = await axios.patch(`${API}/api/orders/${orderId}/cancel`);
+    return res.data.data;
   }
 };

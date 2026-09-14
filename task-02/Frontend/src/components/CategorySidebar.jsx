@@ -1,7 +1,12 @@
-import React from 'react';
-import { mockCategories } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { categoryService } from '../services/categoryService';
 
 function CategorySidebar({ selectedCategory, onCategorySelect, filters, onFilterChange }) {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    categoryService.getCategories().then(setCategories);
+  }, []);
   
   const handleMinChange = (e) => {
     onFilterChange({ ...filters, minPrice: e.target.value });
@@ -25,13 +30,13 @@ function CategorySidebar({ selectedCategory, onCategorySelect, filters, onFilter
         >
           All
         </li>
-        {mockCategories.map(cat => (
+        {categories.map(cat => (
           <li 
-            key={cat}
-            className={`cursor-pointer ${selectedCategory === cat ? 'font-bold' : ''}`}
-            onClick={() => onCategorySelect(cat)}
+            key={cat.category_id || cat.name || cat}
+            className={`cursor-pointer ${selectedCategory === (cat.name || cat) ? 'font-bold' : ''}`}
+            onClick={() => onCategorySelect(cat.name || cat)}
           >
-            {cat}
+            {cat.name || cat}
           </li>
         ))}
       </ul>

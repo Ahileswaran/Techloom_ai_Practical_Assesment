@@ -1,21 +1,17 @@
+import axios from 'axios';
+const API = import.meta.env.VITE_API_URL || 'https://fastspace-backend-production.up.railway.app';
+
 export const reservationService = {
   async reserveStock(orderId, items) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          reservation_id: Date.now(),
-          expires_at: new Date(Date.now() + 300000), // 5 minutes
-          status: 'active'
-        });
-      }, 400);
-    });
+    // Reservation happens automatically when order is created
+    return { reservation_id: orderId, expires_in: 300 };
   },
-  
-  async releaseReservation(reservationId) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({ success: true });
-      }, 200);
-    });
+  async getReservation(orderId) {
+    const res = await axios.get(`${API}/api/reservations/${orderId}`);
+    return res.data.data;
+  },
+  async releaseReservation(orderId) {
+    const res = await axios.delete(`${API}/api/reservations/${orderId}`);
+    return res.data;
   }
 };

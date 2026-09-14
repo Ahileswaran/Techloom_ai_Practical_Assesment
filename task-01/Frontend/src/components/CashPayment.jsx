@@ -37,7 +37,7 @@ export default function CashPayment({ total, onDone, onCancel }) {
           </button>
           <button 
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
-            onClick={() => onDone({ method: 'cash', paidAmount: parsedPaid })}
+            onClick={() => onDone({ method: 'cash', paidAmount: parsedPaid, balance })}
           >
             Done
           </button>

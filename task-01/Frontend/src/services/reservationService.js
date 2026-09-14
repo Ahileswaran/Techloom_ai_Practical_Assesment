@@ -1,18 +1,13 @@
-export const reserveStock = async (orderId, items) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        reservation_id: Math.floor(Math.random() * 10000),
-        expires_at: new Date(Date.now() + 300000)
-      });
-    }, 300);
-  });
-};
+import axios from 'axios';
+const API = import.meta.env.VITE_API_URL || 'https://aromex-pos-system-production.up.railway.app';
 
-export const releaseReservation = async (reservationId) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true });
-    }, 300);
-  });
+export const reservationService = {
+  async getReservation(orderId) {
+    const res = await axios.get(`${API}/api/reservations/${orderId}`);
+    return res.data.data;
+  },
+  async releaseReservation(orderId) {
+    const res = await axios.delete(`${API}/api/reservations/${orderId}`);
+    return res.data;
+  }
 };

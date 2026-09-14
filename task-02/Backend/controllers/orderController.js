@@ -14,8 +14,11 @@ exports.createOrder = async (req, res, next) => {
         conn = await pool.getConnection();
         await conn.beginTransaction();
         
-        const cartItems = await Cart.getByUserId(userId);
-        if (cartItems.length === 0) {
+        let cartItems = req.body.items;
+        if (!cartItems || cartItems.length === 0) {
+            cartItems = await Cart.getByUserId(userId);
+        }
+        if (!cartItems || cartItems.length === 0) {
             await conn.rollback();
             return res.status(400).json({ success: false, message: 'Cart is empty' });
         }
