@@ -16,6 +16,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    message: 'AROMEX POS API is running',
+    endpoints: {
+      products: '/api/products',
+      orders: '/api/orders',
+      reservations: '/api/reservations'
+    }
+  });
+});
+
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reservations', reservationRoutes);
