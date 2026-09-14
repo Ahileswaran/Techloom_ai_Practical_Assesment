@@ -30,18 +30,39 @@ function Cart() {
     setCartItems(cartService.getCart());
   };
 
-  const handlePayment = async (cardDetails) => {
+  const handlePayment = async (paymentData) => {
     if (cartItems.length === 0) return alert('Cart is empty');
+    if (!userDetails.name.trim() || !userDetails.address.trim()) {
+      alert('Please enter your Name and Address in the User Details section before proceeding to pay!');
+      return;
+    }
     setProcessing(true);
     const orderId = Date.now();
-    const res = await paymentService.processPayment(orderId, paymentMethod || 'card', total, uuidv4());
+    const activeMethod = paymentData?.method || paymentMethod || 'card';
+    const res = await paymentService.processPayment(orderId, activeMethod, total, uuidv4());
     setProcessing(false);
     
     if (res.status === 'success') {
       cartService.clearCart();
-      navigate('/payment-success', { state: { items: cartItems, total } });
+      navigate('/payment-success', { 
+        state: { 
+          items: cartItems, 
+          total, 
+          paymentMethod: activeMethod,
+          paymentDetails: paymentData,
+          userDetails 
+        } 
+      });
     } else if (res.status === 'failed') {
-      navigate('/payment-failed', { state: { items: cartItems, total } });
+      navigate('/payment-failed', { 
+        state: { 
+          items: cartItems, 
+          total, 
+          paymentMethod: activeMethod,
+          paymentDetails: paymentData,
+          userDetails 
+        } 
+      });
     } else {
       navigate('/payment-timeout');
     }
@@ -60,8 +81,12 @@ function Cart() {
         <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
         
         {processing && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-            <div className="bg-white p-6 rounded text-xl font-bold">Processing payment...</div>
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div className="bg-white p-8 rounded-lg shadow-2xl flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+              <p className="text-lg font-bold text-gray-800">Processing Payment with Gateway...</p>
+              <p className="text-xs text-gray-500">Checking concurrency & reserving inventory</p>
+            </div>
           </div>
         )}
         
@@ -70,7 +95,7 @@ function Cart() {
             {cartItems.length === 0 ? (
               <p>Your cart is empty.</p>
             ) : (
-              <div className="flex-1 flex flex-col gap-2 overflow-y-auto">
+              <div className="flex-1 flex flex-col gap-2 overflow-y-auto max-h-[460px]">
                 {cartItems.map(item => (
                   <CartItem key={item.product_id} item={item} onRemove={handleRemove} />
                 ))}
@@ -88,24 +113,37 @@ function Cart() {
               <h3 className="font-bold mb-2">User Details</h3>
               <input 
                 type="text" 
-                placeholder="Name" 
+                placeholder="Name *" 
                 value={userDetails.name}
-                onChange={e => setUserDetails({ ...userDetails, name: e.target.value })}
-                className="w-full mb-2 p-1 rounded"
+                onChange={e => {
+                  setUserDetails({ ...userDetails, name: e.target.value });
+                  setUserDetailsSubmitted(false);
+                }}
+                className="w-full mb-2 p-1.5 text-sm rounded border border-gray-300"
               />
               <textarea 
-                placeholder="Address" 
+                placeholder="Address *" 
                 value={userDetails.address}
-                onChange={e => setUserDetails({ ...userDetails, address: e.target.value })}
-                className="w-full mb-2 p-1 rounded"
+                onChange={e => {
+                  setUserDetails({ ...userDetails, address: e.target.value });
+                  setUserDetailsSubmitted(false);
+                }}
+                rows={3}
+                className="w-full mb-2 p-1.5 text-sm rounded border border-gray-300"
               ></textarea>
               <button 
-                onClick={() => setUserDetailsSubmitted(true)}
-                className="bg-blue-600 text-white px-4 py-1 rounded w-full"
+                onClick={() => {
+                  if (!userDetails.name.trim() || !userDetails.address.trim()) {
+                    alert('Please enter both Name and Address.');
+                    return;
+                  }
+                  setUserDetailsSubmitted(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-1.5 rounded w-full text-sm transition-colors"
               >
                 Done
               </button>
-              {userDetailsSubmitted && <p className="text-green-600 font-bold mt-2 text-sm">Details saved ✓</p>}
+              {userDetailsSubmitted && <p className="text-green-600 font-bold mt-2 text-xs">Details saved ✓</p>}
             </div>
             
             <div className="bg-blue-200 rounded p-4 text-center">
@@ -113,27 +151,82 @@ function Cart() {
             </div>
           </div>
           
-          <div className="w-80 bg-blue-600 rounded p-4 text-white">
-            <h3 className="font-bold text-lg mb-4">Payment Methods</h3>
+          <div className="w-96 bg-blue-600 rounded p-4 text-white flex flex-col">
+            <div className="flex justify-between items-center mb-3 pb-2 border-b border-blue-400/40">
+              <h3 className="font-bold text-base">Payment Methods</h3>
+              {paymentMethod && (
+                <button 
+                  onClick={() => setPaymentMethod('')}
+                  className="text-xs text-yellow-300 hover:underline font-semibold"
+                >
+                  Change Method
+                </button>
+              )}
+            </div>
             
-            <div className="flex justify-between items-center mb-2">
-              <span>Cash on delivery</span>
+            {/* 1. Cash on delivery */}
+            <div className="flex justify-between items-center mb-2 p-2 rounded bg-blue-700/40">
+              <span className="text-sm font-medium">Cash on delivery</span>
               <button 
                 onClick={() => setPaymentMethod('cod')}
-                className={`px-2 py-1 rounded text-sm ${paymentMethod === 'cod' ? 'bg-green-500' : 'bg-slate-800'}`}
-              >Select</button>
+                disabled={paymentMethod && paymentMethod !== 'cod'}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                  paymentMethod === 'cod' 
+                    ? 'bg-green-500 text-white shadow' 
+                    : paymentMethod 
+                    ? 'bg-gray-600 text-gray-300 opacity-40 cursor-not-allowed'
+                    : 'bg-slate-800 hover:bg-slate-900 text-white'
+                }`}
+              >
+                {paymentMethod === 'cod' ? 'Selected ✓' : 'Select'}
+              </button>
             </div>
             
-            <div className="flex justify-between items-center mb-4">
-              <span>Bank transfer</span>
+            {/* 2. Bank transfer */}
+            <div className="flex justify-between items-center mb-2 p-2 rounded bg-blue-700/40">
+              <span className="text-sm font-medium">Bank transfer</span>
               <button 
                 onClick={() => setPaymentMethod('bank')}
-                className={`px-2 py-1 rounded text-sm ${paymentMethod === 'bank' ? 'bg-green-500' : 'bg-slate-800'}`}
-              >Select</button>
+                disabled={paymentMethod && paymentMethod !== 'bank'}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                  paymentMethod === 'bank' 
+                    ? 'bg-green-500 text-white shadow' 
+                    : paymentMethod 
+                    ? 'bg-gray-600 text-gray-300 opacity-40 cursor-not-allowed'
+                    : 'bg-slate-800 hover:bg-slate-900 text-white'
+                }`}
+              >
+                {paymentMethod === 'bank' ? 'Selected ✓' : 'Select'}
+              </button>
+            </div>
+
+            {/* 3. Pay with card */}
+            <div className="flex justify-between items-center mb-2 p-2 rounded bg-blue-700/40">
+              <span className="text-sm font-medium">Pay with card</span>
+              <button 
+                onClick={() => setPaymentMethod('card')}
+                disabled={paymentMethod && paymentMethod !== 'card'}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
+                  paymentMethod === 'card' 
+                    ? 'bg-green-500 text-white shadow' 
+                    : paymentMethod 
+                    ? 'bg-gray-600 text-gray-300 opacity-40 cursor-not-allowed'
+                    : 'bg-slate-800 hover:bg-slate-900 text-white'
+                }`}
+              >
+                {paymentMethod === 'card' ? 'Selected ✓' : 'Select'}
+              </button>
             </div>
             
-            <h4 className="font-bold mb-2">Pay with card</h4>
-            <PaymentForm onSubmit={handlePayment} onCancel={() => navigate('/')} />
+            {/* Dynamic Payment Details & Submit Section */}
+            <PaymentForm 
+              paymentMethod={paymentMethod}
+              total={total}
+              userDetails={userDetails}
+              onSubmit={handlePayment} 
+              onCancel={() => navigate('/cancel')}
+              processing={processing}
+            />
           </div>
         </div>
       </div>
