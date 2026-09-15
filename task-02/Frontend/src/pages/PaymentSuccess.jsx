@@ -9,8 +9,29 @@ function PaymentSuccess() {
   const { items = [], total = 0, paymentMethod = '', paymentDetails = {}, userDetails = {} } = location.state || {};
 
   useEffect(() => {
+    if (items.length > 0) {
+      orderService.saveLocalOrder({
+        order_id: location.state?.orderId || Math.floor(Math.random() * 900000) + 100000,
+        items: items.map(i => ({
+          product_id: i.product_id,
+          name: i.name,
+          price: parseFloat(i.price) || 0,
+          quantity: i.quantity || 1,
+          image_url: i.image_url,
+          description: i.description
+        })),
+        total: Number(total || 0),
+        status: 'Paid',
+        created_at: new Date().toISOString().slice(0, 10),
+        payment_method: paymentMethod,
+        userDetails
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     if (redirectSeconds <= 0) {
-      navigate('/');
+      navigate('/orders');
       return;
     }
     const timer = setInterval(() => {
@@ -50,19 +71,27 @@ function PaymentSuccess() {
               <li key={item.product_id}>{item.name} x{item.quantity}</li>
             ))}
           </ul>
-          <p className="font-bold border-t pt-2 text-base">Total {(total).toFixed(2)} LKR</p>
+          <p className="font-bold border-t pt-2 text-base">Total {Number(total).toFixed(2)} LKR</p>
         </div>
         
         <div className="bg-blue-700 p-3 rounded mb-6">
-          <p className="text-red-400 font-bold">You will be redirected to home in {mins}:{secs}</p>
+          <p className="text-red-400 font-bold">You will be redirected in {mins}:{secs}</p>
         </div>
         
-        <button 
-          onClick={() => navigate('/')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold"
-        >
-          Back to Home
-        </button>
+        <div className="flex gap-3 justify-center">
+          <button 
+            onClick={() => navigate('/orders')}
+            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded font-bold text-sm shadow transition-all"
+          >
+            View My Orders
+          </button>
+          <button 
+            onClick={() => navigate('/')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-bold text-sm shadow transition-all"
+          >
+            Continue Shopping
+          </button>
+        </div>
       </div>
     </div>
   );

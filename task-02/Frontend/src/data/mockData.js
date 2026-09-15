@@ -64,8 +64,76 @@ export const mockProducts = [
 ];
 
 export const mockOrders = [
-  { order_id: 1001, items: ['Wireless Headphones x1'], total: 8500, status: 'Paid', created_at: '2024-01-15' },
-  { order_id: 1002, items: ['Running Shoes x2'], total: 13000, status: 'Cancelled', created_at: '2024-01-10' },
-  { order_id: 1003, items: ['Air Fryer x1', 'Coffee Maker x1'], total: 21000, status: 'Expired', created_at: '2024-01-08' },
-  { order_id: 1004, items: ['Samsung Galaxy S23 x1'], total: 120000, status: 'Failed', created_at: '2024-01-05' },
+  { 
+    order_id: 1001, 
+    items: [
+      {
+        product_id: 1,
+        name: 'Wireless Headphones',
+        quantity: 1,
+        price: 8500,
+        image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&h=300&q=80',
+        description: 'High quality wireless headphones with noise cancellation. Compatible with all Bluetooth devices. 30-hour battery life.'
+      }
+    ], 
+    total: 8500, 
+    status: 'Paid', 
+    created_at: '2024-01-15' 
+  },
+  { 
+    order_id: 1002, 
+    items: [
+      {
+        product_id: 3,
+        name: 'Running Shoes',
+        quantity: 2,
+        price: 6500,
+        image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&h=300&q=80',
+        description: 'Lightweight and comfortable running shoes for all terrains. Available in multiple sizes.'
+      }
+    ], 
+    total: 13000, 
+    status: 'Cancelled', 
+    created_at: '2024-01-10' 
+  },
+  { 
+    order_id: 1003, 
+    items: [
+      {
+        product_id: 8,
+        name: 'Air Fryer',
+        quantity: 1,
+        price: 12000,
+        image_url: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=400&h=300&q=80',
+        description: '5L capacity air fryer, oil-free cooking with digital display and 8 presets.'
+      },
+      {
+        product_id: 12,
+        name: 'Coffee Maker',
+        quantity: 1,
+        price: 9000,
+        image_url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=400&h=300&q=80',
+        description: 'Programmable coffee maker with built-in grinder and thermal carafe. 12-cup capacity.'
+      }
+    ], 
+    total: 21000, 
+    status: 'Expired', 
+    created_at: '2024-01-08' 
+  },
+  { 
+    order_id: 1004, 
+    items: [
+      {
+        product_id: 5,
+        name: 'Samsung Galaxy S23',
+        quantity: 1,
+        price: 120000,
+        image_url: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=400&h=300&q=80',
+        description: 'Latest Samsung flagship with 200MP camera and 5G connectivity.'
+      }
+    ], 
+    total: 120000, 
+    status: 'Failed', 
+    created_at: '2024-01-05' 
+  },
 ];
