@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { orderService } from '../services/orderService';
 import { paymentService } from '../services/paymentService';
+import { productService } from '../services/productService';
 import CashPayment from '../components/CashPayment';
 import CardPayment from '../components/CardPayment';
 import SlipPreview from '../components/SlipPreview';
@@ -51,20 +52,33 @@ export default function Checkout() {
       setProcessing(false);
       
       if (result.status === 'success') {
-        navigate('/payment-success', { state: { items, total } });
+        navigate('/payment-success', { state: { orderId, items, total, method: data.method } });
       } else if (result.status === 'failed') {
-        navigate('/payment-failed', { state: { items, total } });
+        navigate('/payment-failed', { state: { orderId, items, total, reason: 'Payment Declined' } });
       } else if (result.status === 'timeout') {
-        navigate('/payment-failed', { state: { items, total, reason: 'timeout' } });
+        navigate('/payment-failed', { state: { orderId, items, total, reason: 'timeout' } });
       }
     } catch (error) {
       setProcessing(false);
-      navigate('/payment-failed', { state: { items, total, reason: 'error' } });
+      navigate('/payment-failed', { state: { orderId, items, total, reason: 'error' } });
     }
   };
 
-  const handleCancel = () => {
-    navigate('/cancel');
+  const handleCancel = async () => {
+    setProcessing(true);
+    try {
+      if (orderId) {
+        await orderService.cancelOrder(orderId);
+      }
+      productService.restockItems(items);
+    } catch (error) {
+      console.warn('Failed to cancel order:', error);
+    }
+    navigate('/', { 
+      state: { 
+        message: `Order #${orderId || ''} cancelled. Reserved items have been restocked to inventory.` 
+      } 
+    });
   };
 
   return (

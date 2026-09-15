@@ -46,5 +46,23 @@ export const productService = {
       console.warn('API getProductById failed, using mock data fallback:', e);
     }
     return mockProducts.find(p => p.product_id === Number(id)) || null;
+  },
+  restockItems(items) {
+    if (!Array.isArray(items)) return;
+    for (const item of items) {
+      const prod = mockProducts.find(p => p.product_id === item.product_id || (item.name && p.name.toLowerCase() === item.name.toLowerCase()));
+      if (prod) {
+        prod.stock_quantity += (Number(item.quantity) || 1);
+      }
+    }
+  },
+  decrementLocalStock(items) {
+    if (!Array.isArray(items)) return;
+    for (const item of items) {
+      const prod = mockProducts.find(p => p.product_id === item.product_id || (item.name && p.name.toLowerCase() === item.name.toLowerCase()));
+      if (prod) {
+        prod.stock_quantity = Math.max(0, prod.stock_quantity - (Number(item.quantity) || 1));
+      }
+    }
   }
 };

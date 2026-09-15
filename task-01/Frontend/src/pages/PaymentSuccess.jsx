@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 export default function PaymentSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { items = [], total = 0 } = location.state || {};
+  const { items = [], total = 0, orderId } = location.state || {};
   const [redirectSeconds, setRedirectSeconds] = useState(300);
 
   useEffect(() => {
@@ -27,6 +27,14 @@ export default function PaymentSuccess() {
       <div className="bg-sky-100 p-8 rounded shadow-lg max-w-md w-full">
         <h1 className="text-green-600 text-2xl font-bold text-center mb-6">Your Payment Success</h1>
         
+        {orderId && (
+          <div className="text-center mb-3">
+            <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold">
+              Order #{orderId}
+            </span>
+          </div>
+        )}
+
         <h3 className="font-bold text-lg mb-2 text-slate-800">Order Summary</h3>
         <div className="bg-white p-4 rounded mb-4 shadow border border-blue-200">
           <ul className="list-disc pl-5 mb-4 text-black">
@@ -43,12 +51,20 @@ export default function PaymentSuccess() {
           <p className="text-red-600 font-bold">You will be redirected to home in {timeStr}</p>
         </div>
         
-        <button 
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold"
-          onClick={() => navigate('/')}
-        >
-          Back to Home
-        </button>
+        <div className="flex flex-col gap-2">
+          <button 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold shadow"
+            onClick={() => navigate('/')}
+          >
+            New Sale / Back to Home
+          </button>
+          <button 
+            className="text-xs text-slate-500 hover:text-blue-700 underline text-center py-1"
+            onClick={() => navigate('/cancel', { state: { orderId, items, total, isPaidReturn: true } })}
+          >
+            Process Customer Return / Refund
+          </button>
+        </div>
       </div>
     </div>
   );

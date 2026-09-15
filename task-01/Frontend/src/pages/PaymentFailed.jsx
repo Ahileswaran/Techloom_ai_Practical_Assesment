@@ -1,10 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { orderService } from '../services/orderService';
+import { productService } from '../services/productService';
 
 export default function PaymentFailed() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { items = [], total = 0, reason = '' } = location.state || {};
+  const { items = [], total = 0, reason = '', orderId } = location.state || {};
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancelOrder = async () => {
+    setCancelling(true);
+    try {
+      if (orderId) {
+        await orderService.cancelOrder(orderId);
+      }
+      productService.restockItems(items);
+    } catch (e) {
+      console.warn('Cancel order error:', e);
+    }
+    navigate('/', {
+      state: {
+        message: `Order #${orderId || ''} cancelled. Reserved stock restocked to inventory.`
+      }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-800 flex items-center justify-center p-4">
@@ -32,14 +52,15 @@ export default function PaymentFailed() {
         
         <div className="flex gap-4">
           <button 
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded font-bold text-sm"
-            onClick={() => navigate('/cancel')}
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded font-bold text-sm disabled:opacity-50"
+            disabled={cancelling}
+            onClick={handleCancelOrder}
           >
-            Cancel Order
+            {cancelling ? 'Restocking & Cancelling...' : 'Cancel Order'}
           </button>
           <button 
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold text-sm"
-            onClick={() => navigate('/checkout', { state: { items, total } })}
+            onClick={() => navigate('/checkout', { state: { orderId, items, total } })}
           >
             Update Payment method
           </button>

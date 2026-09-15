@@ -10,7 +10,8 @@ export default function ItemDetails({
   onQuantityChange,
   timerDisplay,
   reservationActive,
-  onProceed
+  onProceed,
+  onClear
 }) {
   const total = selectedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -109,13 +110,24 @@ export default function ItemDetails({
         </div>
       )}
 
-      <button
-        className="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded w-full"
-        onClick={onProceed}
-        disabled={selectedItems.length === 0}
-      >
-        Proceed to Checkout
-      </button>
+      <div className="flex gap-2">
+        {onClear && selectedItems.length > 0 && (
+          <button
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded text-sm transition"
+            onClick={onClear}
+            title="Cancel & Clear Items"
+          >
+            Clear / Void
+          </button>
+        )}
+        <button
+          className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded disabled:opacity-50 transition"
+          onClick={onProceed}
+          disabled={selectedItems.length === 0}
+        >
+          Proceed to Checkout
+        </button>
+      </div>
     </div>
   );
 }

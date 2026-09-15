@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { productService } from '../services/productService';
 import InventoryTable from '../components/InventoryTable';
 import ItemDetails from '../components/ItemDetails';
@@ -13,11 +13,26 @@ export default function POSDashboard() {
   const [quantity, setQuantity] = useState(1);
   const [selectedItems, setSelectedItems] = useState([]);
   const [reservationExpired, setReservationExpired] = useState(false);
+  const [bannerMessage, setBannerMessage] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const loadProducts = () => {
+    productService.getProducts().then(setProducts).catch(console.error);
+  };
 
   useEffect(() => {
-    productService.getProducts().then(setProducts).catch(console.error);
-  }, []);
+    loadProducts();
+    if (location.state?.message) {
+      setBannerMessage(location.state.message);
+      // Clean location state so refreshing doesn't duplicate banner
+      window.history.replaceState({}, document.title);
+      const timer = setTimeout(() => {
+        setBannerMessage('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   const handleAdd = (searchStr, qty) => {
     if (!searchStr) return;
@@ -51,6 +66,17 @@ export default function POSDashboard() {
     }
   };
 
+  const handleClearCart = () => {
+    if (selectedItems.length === 0) return;
+    productService.restockItems(selectedItems);
+    setSelectedItems([]);
+    setSearchTerm('');
+    setQuantity(1);
+    loadProducts();
+    setBannerMessage('Selected items cleared and returned to inventory.');
+    setTimeout(() => setBannerMessage(''), 4000);
+  };
+
   const total = selectedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   const handleProceedToCheckout = () => {
@@ -67,9 +93,30 @@ export default function POSDashboard() {
 
   return (
     <div className="min-h-screen bg-sky-100 flex flex-col">
-      <header className="h-16 bg-slate-800 text-white flex items-center px-4 font-bold text-xl">
-        POS System
+      <header className="h-16 bg-slate-800 text-white flex items-center justify-between px-6 font-bold text-xl shadow">
+        <div className="flex items-center gap-3">
+          <span className="text-blue-400 font-extrabold tracking-wider">AROMEX</span>
+          <span className="text-sm bg-slate-700 text-gray-300 px-2 py-0.5 rounded font-normal">POS Colombo</span>
+        </div>
+        <div className="text-xs text-slate-400 font-normal">
+          Counter Station 1 • Direct Retail Sales
+        </div>
       </header>
+
+      {bannerMessage && (
+        <div className="bg-emerald-600 text-white px-6 py-2.5 flex items-center justify-between shadow-md text-sm font-semibold transition-all">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">✓</span>
+            <span>{bannerMessage}</span>
+          </div>
+          <button 
+            onClick={() => setBannerMessage('')}
+            className="text-white hover:text-gray-200 font-bold px-2 py-0.5 rounded"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       
       <main className="flex flex-1 overflow-hidden">
         {/* LEFT Panel */}
@@ -95,6 +142,7 @@ export default function POSDashboard() {
             timerDisplay={reservationActive && !reservationExpired ? <ReservationTimer onExpire={handleTimerExpire} /> : null}
             reservationActive={reservationActive}
             onProceed={handleProceedToCheckout}
+            onClear={handleClearCart}
           />
         </div>
         
