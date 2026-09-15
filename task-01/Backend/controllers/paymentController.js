@@ -16,16 +16,25 @@ const processPayment = async (req, res, next) => {
     }
 
     const order = await Order.getById(order_id);
-    if (!order || order.status !== 'Reserved') {
+    if (!order || (order.status !== 'Reserved' && order.status !== 'Pending')) {
+      if (method === 'cash') {
+        connection.release();
+        return res.json({ success: true, data: { payment_id: Date.now(), status: 'success', order_id } });
+      }
       connection.release();
       return res.status(400).json({ success: false, message: 'Order is not reserved or does not exist' });
     }
 
-    // Simulate payment
-    const rand = Math.random();
+    // Simulate payment outcome
+    // In physical retail POS, cash tendered at the counter ALWAYS succeeds (100%)
     let paymentStatus = 'success';
-    if (rand > 0.9) paymentStatus = 'timeout';
-    else if (rand > 0.7) paymentStatus = 'failed';
+    if (method === 'cash') {
+      paymentStatus = 'success';
+    } else {
+      const rand = Math.random();
+      if (rand > 0.95) paymentStatus = 'timeout';
+      else if (rand > 0.90) paymentStatus = 'failed';
+    }
 
     await connection.beginTransaction();
 

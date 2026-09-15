@@ -4,7 +4,14 @@ export default function CashPayment({ total, onDone, onCancel }) {
   const [paidAmount, setPaidAmount] = useState('');
   
   const parsedPaid = parseFloat(paidAmount || 0);
-  const balance = Math.max(0, parsedPaid - total);
+  const displayPaid = paidAmount !== '' ? parsedPaid : total;
+  const balance = Math.max(0, displayPaid - total);
+
+  const handleDone = () => {
+    const finalPaid = parseFloat(paidAmount) || total;
+    const finalBal = Math.max(0, finalPaid - total);
+    onDone({ method: 'cash', paidAmount: finalPaid, balance: finalBal });
+  };
 
   return (
     <div className="bg-blue-200 p-4 rounded text-black">
@@ -13,7 +20,7 @@ export default function CashPayment({ total, onDone, onCancel }) {
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <label className="font-bold w-1/3">Total</label>
-          <input type="text" readOnly value={total.toFixed(2)} className="flex-1 p-2 border rounded bg-gray-100" />
+          <input type="text" readOnly value={total.toFixed(2)} className="flex-1 p-2 border rounded bg-gray-100 font-bold" />
         </div>
         
         <div className="flex justify-between items-center">
@@ -21,23 +28,24 @@ export default function CashPayment({ total, onDone, onCancel }) {
           <input 
             type="number" 
             value={paidAmount}
+            placeholder={total.toFixed(2)}
             onChange={(e) => setPaidAmount(e.target.value)}
-            className="flex-1 p-2 border rounded"
+            className="flex-1 p-2 border rounded font-semibold"
           />
         </div>
         
         <div className="flex justify-between items-center">
           <label className="font-bold w-1/3">Balance</label>
-          <input type="text" readOnly value={balance.toFixed(2)} className="flex-1 p-2 border rounded bg-gray-100" />
+          <input type="text" readOnly value={balance.toFixed(2)} className="flex-1 p-2 border rounded bg-gray-100 font-bold text-blue-800" />
         </div>
 
         <div className="flex gap-4 mt-4">
-          <button className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded" onClick={onCancel}>
+          <button className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded font-bold" onClick={onCancel}>
             Cancel
           </button>
           <button 
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
-            onClick={() => onDone({ method: 'cash', paidAmount: parsedPaid, balance })}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold"
+            onClick={handleDone}
           >
             Done
           </button>
